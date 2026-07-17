@@ -2,7 +2,7 @@
 
 ## 📚 Git
 
-- [Git基础](./git_notes/git_notes/readme.md)
+- [Git基础](./git_notes/git_notes/README.md)
 
 
 ## ☕ Java
