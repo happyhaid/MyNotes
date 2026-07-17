@@ -120,16 +120,16 @@
 
 - 用暂存区中的文件覆盖工作目录中的文件：`git checkout -- 文件名` 不加 `-- 文件名`则覆盖全部文件
 
-- 将文件从暂存区中删除：`git rm --cached 文件名`
+- 将文件从暂存区中删除：`git rm --cached 文件名` 。git checkout -- README.md 。用暂存区的REAME.md覆盖修改后README.md   ctrl+z
 
-- 将 git 仓库中指定的更新记录恢复出来，并且覆盖暂存区和工作目录：` git reset --hard commitID`
+- 将 git 仓库中指定的更新记录恢复出来，并且覆盖暂存区和工作目录：` git reset --hard commitID`      --soft 对外无影响，纯粹觉得这一次提交没必要返回上一次提交。  git reset --mixed 默认的参数，只覆盖缓存区。
 
 - > > 撤销
   >
   > 1. 删除工作区文件，并且也从暂存区删除对应文件的记录：`git rm `;
   > 2. 从暂存区中删除文件，但是工作区依然还有该文件:`git rm --cached `;
-  > 3. 取消暂存区已经暂存的文件：`git reset HEAD ...`;
-  > 4. 撤销上一次对文件的操作：`git checkout --`。要确定上一次对文件的修改不再需要，如果想保留上一次的修改以备以后继续工作，可以使用 stashing 和分支来处理；
+  > 3. 取消暂存区已经暂存的文件：`git reset HEAD ...`; 
+  > 4. 撤销上一次对文件的操作：`git checkout --`。git checkout -- README.md 相当于单个文件的 ctrl+z 要确定上一次对文件的修改不再需要，如果想保留上一次的修改以备以后继续工作，可以使用 stashing 和分支来处理；
   > 5. 隐藏当前变更，以便能够切换分支：`git stash`；
   > 6. 查看当前所有的储藏：`git stash list`；
   > 7. 应用最新的储藏：`git stash apply`，如果想应用更早的储藏：`git stash apply stash@{2}`；重新应用被暂存的变更，需要加上`--index`参数：`git stash apply --index`;
@@ -160,6 +160,7 @@
 - `git merge 来源分支` 合并分支
 - `git branch -d 分支名称` 删除分支（分支合并后才允许被删除）（-D 大写强制删除）
   - `git push origin :branch-name` : 远程仓库同步删除掉的分支
+  - git push -u origin 本地分支名   ，-u含义是 --set-upstream 追踪上游远程仓库，下次直接git push就提交当前本地分支到对应分支了。
 
 注意：
 
@@ -1062,3 +1063,31 @@ git ls-tree -r github/main --name-only
 用途：
 
 > 解除错误的子模块关系，让 Git 重新把它当普通文件夹管理。
+
+
+
+
+
+git管理四个东西 ：工作区 staged/cached repository remote
+
+查看暂存区： git status
+工作区 ->暂存区 git add src/api/record.ts
+暂存区覆盖工作区 git restore src/api/record.ts 等价于 git checkout -- README.md
+暂存区 撤销文件 git restore --staged src/api/record.ts
+
+查看历史提交： git log --oneline 
+暂存区->仓库 git commit -m"***"
+仓库提交覆盖暂存区和工作区  git reset --hard commitID
+
+git reset --hard commitID Head不脱离分支，如Head->mini-program分支->commitID。
+--hard起初以为是硬盘的意思，其实是“强硬”的意思：commitID内容同时覆盖暂存区和工作区。然后一查发现还有其他参数可选。--soft 最温柔的参数，能做到Head->mini-program分支->commitID，但是不对外影响（覆盖暂存区和工作区）。很明显就要问这有什么用？ 我认为有这样的使用场景：刚刚做了 -m“完成猪队功能”的代码提交，突然发现有错别字，--soft 回到上一次提交，重新commit -m"完成组队功能"。
+
+reset指令有一个很像的指令需要区分：checkout。git checkout除了查看暂存区情况，还能
+git checkout commitID ，Head脱离分支指向commit，但由于处于游离状态 之后的提交的都是游离的。
+所以checkout指令就像是“神游”一样，看似不能造成影响，其实可以穿梭过往查看历史信息。只是查看完成之后要记得checkout回到原分支。不然由于处于游离状态 之后的提交的都是游离的。除非你在此新建分支，head就挂靠新分支，结束了游离状态。
+
+
+git checkout 分支名 ，就是切换分支。他会
+
+git remote set-url orgin git@github.com:maxsmjle/bird_record.git
+git push -u orgin main 可以让本地main分支关联远程仓库的main分支，以后只需要git push 就能推送
