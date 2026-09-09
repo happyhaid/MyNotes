@@ -118,27 +118,103 @@
 
 #### 撤销
 
-- 用暂存区中的文件覆盖工作目录中的文件：`git checkout -- 文件名` 不加 `-- 文件名`则覆盖全部文件
+- **用暂存区中的文件覆盖工作目录中的文件**：`git restore 文件名`
+  等价于旧命令：`git checkout -- 文件名`
+  例如：`git restore README.md`，用暂存区中的 `README.md` 覆盖工作区中修改后的 `README.md`，相当于单个文件的 `Ctrl+Z`。
+  **注意：会丢失工作区中尚未暂存的修改，确定不再需要这些修改时使用。**
 
-- 将文件从暂存区中删除：`git rm --cached 文件名` 。git checkout -- README.md 。用暂存区的REAME.md覆盖修改后README.md   ctrl+z
+- **取消暂存区中的文件**：`git restore --staged 文件名`
+  用 `HEAD`（当前分支最新 commit）中的文件覆盖暂存区中的文件，但**不会影响工作区**。
+  例如：`git restore --staged README.md`：
 
-- 将 git 仓库中指定的更新记录恢复出来，并且覆盖暂存区和工作目录：` git reset --hard commitID`      --soft 对外无影响，纯粹觉得这一次提交没必要返回上一次提交。  git reset --mixed 默认的参数，只覆盖缓存区。
+  ```text
+  HEAD
+   ↓
+  暂存区
+  ```
 
-- > > 撤销
-  >
-  > 1. 删除工作区文件，并且也从暂存区删除对应文件的记录：`git rm `;
-  > 2. 从暂存区中删除文件，但是工作区依然还有该文件:`git rm --cached `;
-  > 3. 取消暂存区已经暂存的文件：`git reset HEAD ...`; 
-  > 4. 撤销上一次对文件的操作：`git checkout --`。git checkout -- README.md 相当于单个文件的 ctrl+z 要确定上一次对文件的修改不再需要，如果想保留上一次的修改以备以后继续工作，可以使用 stashing 和分支来处理；
-  > 5. 隐藏当前变更，以便能够切换分支：`git stash`；
-  > 6. 查看当前所有的储藏：`git stash list`；
-  > 7. 应用最新的储藏：`git stash apply`，如果想应用更早的储藏：`git stash apply stash@{2}`；重新应用被暂存的变更，需要加上`--index`参数：`git stash apply --index`;
-  > 8. 使用 apply 命令只是应用储藏，而内容仍然还在栈上，需要移除指定的储藏：`git stash drop stash{0}`；如果使用 pop 命令不仅可以重新应用储藏，还可以立刻从堆栈中清除：`git stash pop`;
-  > 9. 在某些情况下，你可能想应用储藏的修改，在进行了一些其他的修改后，又要取消之前所应用储藏的修改。Git 没有提供类似于 stash unapply 的命令，但是可以通过取消该储藏的补丁达到同样的效果：`git stash show -p stash@{0} | git apply -R`；同样的，如果你沒有指定具体的某个储藏，Git 会选择最近的储藏：`git stash show -p | git apply -R`；
-  >
-  > > 更新文件
-  >
-  > 1. 重命名文件，并将已改名文件提交到暂存区：`git mv [file-original] [file-renamed]`;
+  相当于旧命令：`git reset HEAD README.md`。
+  作用是：**取消暂存，但保留工作区中的修改。**
+
+- **将文件从暂存区中删除，但工作区依然保留该文件**：`git rm --cached 文件名`
+  常用于让 Git 不再跟踪某个文件，例如：
+
+  `git rm --cached .env`
+
+  与 `git restore --staged` 不同：
+
+  ```text
+  git restore --staged
+  = 取消这次暂存
+  
+  git rm --cached
+  = 从 Git 的跟踪中删除，但本地文件保留
+  ```
+
+- **删除工作区文件，并且也从暂存区删除对应文件的记录**：`git rm 文件名`
+
+- **将 Git 仓库中指定的更新记录恢复出来，并覆盖暂存区和工作目录**：
+
+  `git reset --hard commitID`
+
+  三种参数：
+
+  ```text
+  git reset --soft commitID
+  HEAD：移动
+  暂存区：不变
+  工作区：不变
+  
+  git reset --mixed commitID   # 默认
+  HEAD：移动
+  暂存区：覆盖
+  工作区：不变
+  
+  git reset --hard commitID
+  HEAD：移动
+  暂存区：覆盖
+  工作区：覆盖
+  ```
+
+  `--soft`：撤销 commit，但代码修改全部保留在暂存区。适合觉得这一次提交没必要，想回到上一次 commit 重新整理提交历史。
+  `--mixed`：撤销 commit，同时取消暂存，代码修改保留在工作区。
+  `--hard`：撤销 commit，同时让暂存区和工作区都回到指定 commit 的状态，**可能导致未提交的修改丢失，谨慎使用。**
+
+> > **撤销**
+>
+> 1. 删除工作区文件，并且也从暂存区删除对应文件的记录：`git rm`
+>
+> 2. 从暂存区中删除文件，但是工作区依然还有该文件：`git rm --cached`
+>
+> 3. **取消暂存区已经暂存的文件**：`git restore --staged 文件名`
+>    旧命令：`git reset HEAD 文件名`
+>
+> 4. **撤销工作区中尚未暂存的修改**：`git restore 文件名`
+>    旧命令：`git checkout -- 文件名`
+>    `git restore -- README.md` 相当于单个文件的 Ctrl+Z。要确定上一次对文件的修改不再需要；如果想保留上一次的修改以备以后继续工作，可以使用 stashing 和分支来处理。
+>
+> 5. 隐藏当前变更，以便能够切换分支：`git stash push -m "用户管理模块重构进行中" ` 
+>
+> 6. 查看当前所有的储藏：`git stash list`
+>
+> 7. 应用最新的储藏：`git stash apply`
+>    如果想应用更早的储藏：`git stash apply stash@{2}`
+>    重新应用被暂存的变更，需要加上 `--index` 参数：`git stash apply --index`
+>
+> 8. 使用 `apply` 命令只是应用储藏，而内容仍然还在栈上，需要移除指定的储藏：`git stash drop stash@{0}`
+>    如果使用 `pop` 命令，不仅可以重新应用储藏，还可以立刻从堆栈中清除：`git stash pop`
+>
+> 9. 在某些情况下，你可能想应用储藏的修改，在进行了一些其他的修改后，又要取消之前所应用储藏的修改。Git 没有提供类似于 `stash unapply` 的命令，但是可以通过取消该储藏的补丁达到同样的效果：
+>
+>    `git stash show -p stash@{0} | git apply -R`
+>
+>    同样的，如果没有指定具体的某个储藏，Git 会选择最近的储藏：
+>
+>    `git stash show -p | git apply -R`
+>
+> > > **更新文件**
+>
+> 1. 重命名文件，并将已改名文件提交到暂存区：`git mv [file-original] [file-renamed]`
 
 ## （二）Git 进阶
 
@@ -168,9 +244,9 @@
 
 > > 分支管理
 >
-> 1. 创建分支：`git branch `，如`git branch testing`；
+> 1. 创建分支：`git branch `，如`git branch testing`；等价  `git switch ` 
 > 2. 从当前所处的分支切换到其他分支：`git checkout `，如`git checkout testing`；
-> 3. 新建并切换到新建分支上：`git checkout -b `;
+> 3. 新建并切换到新建分支上：`git checkout -b `;  `git switch -c  ` c就是creat 
 > 4. 删除分支：`git branch -d `；
 > 5. 将当前分支与指定分支进行合并：`git merge `;
 > 6. 显示本地仓库的所有分支：`git branch`;
@@ -189,7 +265,25 @@ git 中可以不提交更改，只提取分支上所有改动并储存，让开�
 场景：
 
 - 储存临时改动：`git stash`
+
 - 恢复临时改动：`git stash pop`
+
+  ```python
+  1.暂存当前未提交的修改
+  git stash push -m "用户管理模块重构进行中"
+   
+  2.查看 stash 列表
+  git stash list
+  如stash@{0}: On feature/user-mgmt: 用户管理模块重构进行中
+   
+  3.切到其他分支处理紧急任务
+  git checkout main
+  4. 修复 bug、提交...
+  git checkout feature/user-mgmt
+   
+  5.恢复之前暂存的修改
+  git stash pop
+  ```
 
 ### 打标签
 
@@ -1072,8 +1166,8 @@ git管理四个东西 ：工作区 staged/cached repository remote
 
 查看暂存区： git status
 工作区 ->暂存区 git add src/api/record.ts
-暂存区覆盖工作区 git restore src/api/record.ts 等价于 git checkout -- README.md
-暂存区 撤销文件 git restore --staged src/api/record.ts
+工作区恢复：暂存区覆盖工作区 git restore src/api/record.ts 等价于 git checkout -- README.md  
+暂存区恢复：commit覆盖 暂存区 git restore --staged src/api/record.ts
 
 查看历史提交： git log --oneline 
 暂存区->仓库 git commit -m"***"
@@ -1714,7 +1808,7 @@ Conflict → Git 无法自动决定怎么合
 
 # 十四、三路合并（3-Way Merge）
 
-这是我们最后讲到的重点。
+这是我们最后讲到的重点。 https://code.visualstudio.com/docs/sourcecontrol/merge-conflicts
 
 普通直觉可能认为：
 
