@@ -1089,5 +1089,7 @@ git checkout commitID ，Head脱离分支指向commit，但由于处于游离状
 
 git checkout 分支名 ，就是切换分支。他会
 
-git remote set-url orgin git@github.com:maxsmjle/bird_record.git
-git push -u orgin main 可以让本地main分支关联远程仓库的main分支，以后只需要git push 就能推送
+> git remote set-url orgin git@github.com:maxsmjle/bird_record.git
+> git push -u orgin main：main   第一个main是本地分支，第二个main是远程仓库分支 
+
+可以让本地main分支关联远程仓库的main分支，以后只需要git push 就能推送

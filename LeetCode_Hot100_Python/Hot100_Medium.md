@@ -2246,7 +2246,7 @@ class Trie:
 >         1a     1b      2
 >
 >   ```python
->   "for i in range(start,n)" (避免“2，1”重复出现 ,和1,2重复 .不懂可以看上面知识点。
+>   "for i in range(start,n)" (通过要求当前层选择必须在start之后（即不论子集还是组合的路径 顺序是nums[i]的顺序，避免“2，1”逆顺序重复出现 ,和1,2重复 .不懂可以看上面知识点。
 >   if  "i > start and nums[i] == nums[i-1] "（避免1a 1b and "[not used[i-1]]"（排列 on_path，每个元素只能选择一次 ）:
 >       continue
 >   三个红色标记的，就是回溯的全部细节。
