@@ -1090,6 +1090,850 @@ git checkout commitID ，Head脱离分支指向commit，但由于处于游离状
 git checkout 分支名 ，就是切换分支。他会
 
 > git remote set-url orgin git@github.com:maxsmjle/bird_record.git
-> git push -u orgin main：main   第一个main是本地分支，第二个main是远程仓库分支 
+> git push -u origin main：main   第一个main是本地分支，第二个main是远程仓库分支 
+>
+> git push -u origin main 等同于上面
 
 可以让本地main分支关联远程仓库的main分支，以后只需要git push 就能推送
+
+
+
+
+
+可以。按照我们这几轮的学习顺序，我建议把今天的 Git 笔记整理成 **“远程仓库 → 分支 → Pull/Push → Fork/PR → Merge/Diff/Conflict”** 这一条线，而不是零散记命令。
+
+# Git 协作开发笔记
+
+## 一、Git 中最重要的几个“地方”
+
+```text
+工作区 Working Tree
+      ↓ git add
+暂存区 Staging Area
+      ↓ git commit
+本地仓库 Local Repository
+      ↓ git push
+远程仓库 Remote Repository
+```
+
+如果涉及 Fork：
+
+```text
+                    GitHub
+              ┌────────────────┐
+              │ 原作者仓库      │
+              │ upstream       │
+              │ main           │
+              └───────┬────────┘
+                      │ Fork
+                      ↓
+              ┌────────────────┐
+              │ 我的 Fork       │
+              │ origin         │
+              │ feature/A      │
+              └───────┬────────┘
+                      ↑ push
+                      │
+              ┌───────┴────────┐
+              │ 本地仓库        │
+              │ feature/A      │
+              └────────────────┘
+```
+
+### `origin` 和 `upstream`
+
+如果是 Fork 开源项目，通常：
+
+```text
+origin   → 自己 Fork 的仓库
+upstream → 原作者/官方仓库
+```
+
+一句话：
+
+> **origin 是我的，upstream 是原来的。**
+
+------
+
+# 二、Branch 分支
+
+分支本质上可以理解为：
+
+> **一条独立的开发线路。**
+
+例如：
+
+```text
+main
+  │
+  A ─── B
+       │
+       ├── C ─── D    feature/A
+       │
+       └── E ─── F    feature/B
+```
+
+开发者通常不要直接在 `main` 上开发，而是：
+
+```bash
+git switch -c feature/A
+```
+
+然后：
+
+```text
+main
+  ↓
+feature/A
+  ↓
+开发
+  ↓
+commit
+```
+
+这样不会直接污染 `main`。
+
+------
+
+# 三、Push
+
+## `git push origin feature/A`
+
+意思：
+
+> 把本地 `feature/A` 推送到 `origin` 远程仓库的 `feature/A`。
+
+完整写法：
+
+```bash
+git push origin feature/A:feature/A
+```
+
+冒号两边：
+
+```text
+git push origin 本地分支:远程分支
+                ↑       ↑
+             feature/A feature/A
+```
+
+所以：
+
+```bash
+git push origin feature/A
+```
+
+可以理解成：
+
+```text
+本地 feature/A
+      │
+      │ push
+      ↓
+origin 的 feature/A
+```
+
+如果你使用 Fork：
+
+```text
+本地 feature/A
+      ↓ push
+自己的 Fork
+      ↓
+feature/A
+```
+
+### `-u`
+
+```bash
+git push -u origin feature/A
+```
+
+`-u` 会建立 upstream tracking。
+
+以后在这个分支上可以直接：
+
+```bash
+git push
+```
+
+Git 就知道：
+
+```text
+当前 feature/A
+       ↓
+origin/feature/A
+```
+
+------
+
+# 四、Pull
+
+`git pull` 可以粗略理解为：
+
+```text
+git fetch
+   +
+git merge
+```
+
+即：
+
+```text
+远程仓库
+   ↓ fetch
+origin/main
+   ↓ merge
+本地 main
+   ↓
+工作区
+```
+
+### Fetch
+
+```bash
+git fetch origin
+```
+
+只把远程的新信息拿到本地：
+
+```text
+远程 main
+   ↓
+origin/main
+```
+
+**不会自动修改你当前分支的代码。**
+
+### Pull
+
+```bash
+git pull origin main
+```
+
+相当于：
+
+```text
+fetch
+  ↓
+拿到 origin/main
+  ↓
+merge / rebase
+  ↓
+当前本地分支
+```
+
+因此 **pull 可能产生冲突**。
+
+------
+
+# 五、Push 和 Pull 的方向
+
+这个一定要熟：
+
+```text
+Pull：
+
+远程
+ ↓
+本地
+Push：
+
+本地
+ ↓
+远程
+```
+
+一句话：
+
+> **Pull 拉下来，Push 推上去。**
+
+------
+
+# 六、Push 被 Reject
+
+例如远程：
+
+```text
+A ─── B ─── C
+```
+
+但是你的本地：
+
+```text
+A ─── B
+```
+
+此时你修改后：
+
+```text
+A ─── B ─── D
+```
+
+然后：
+
+```bash
+git push
+```
+
+可能被拒绝：
+
+```text
+remote:
+A ─── B ─── C
+
+local:
+A ─── B ─── D
+```
+
+因为远程有 `C`，而本地没有。
+
+这时候通常：
+
+```bash
+git pull
+```
+
+先把远程更新下来，再解决可能产生的冲突，最后：
+
+```bash
+git push
+```
+
+所以：
+
+> **Push 被 reject ≠ PR 被 reject。**
+
+这是两个完全不同的东西。
+
+------
+
+# 七、Fork
+
+Fork 是 GitHub 上的操作。
+
+假设：
+
+```text
+原作者：
+github.com/A/project
+```
+
+你点击 Fork：
+
+```text
+你的：
+github.com/B/project
+```
+
+于是你拥有了这个项目的一份远程副本。
+
+通常配置：
+
+```text
+origin
+  ↓
+你的 Fork
+
+upstream
+  ↓
+原作者仓库
+```
+
+------
+
+# 八、Pull Request（PR）
+
+PR 和 `git pull` **不是一回事**。
+
+Pull Request 的意思是：
+
+> **“我已经把代码放到我的远程分支了，请你把我的修改合并到你的项目里。”**
+
+例如：
+
+```text
+你的本地
+feature/A
+    │
+    │ git push
+    ↓
+你的 Fork
+feature/A
+    │
+    │ Pull Request
+    ↓
+原作者仓库
+main
+```
+
+所以 PR 通常发生在 GitHub/GitLab 网页平台上。
+
+------
+
+# 九、Push 和 PR 的区别
+
+这是非常重要的一组概念：
+
+### Push
+
+```text
+本地分支
+   ↓
+远程分支
+```
+
+解决的是：
+
+> **“把我的代码上传到远程。”**
+
+### PR
+
+```text
+我的远程分支
+      ↓
+   Pull Request
+      ↓
+对方的目标分支
+```
+
+解决的是：
+
+> **“请把我的代码合并到你的分支。”**
+
+因此完整流程：
+
+```text
+开发
+ ↓
+commit
+ ↓
+push
+ ↓
+自己的 Fork
+ ↓
+创建 PR
+ ↓
+代码 Review
+ ↓
+Merge
+ ↓
+原仓库 main
+```
+
+一句话：
+
+> **Push 是上传代码，PR 是请求合并代码。**
+
+------
+
+# 十、Merge
+
+Merge 就是真正把两个分支合并。
+
+例如：
+
+```text
+        C ─── D
+       /       \
+A ─── B         M
+       \       /
+        E ─── F
+```
+
+最后生成一个合并后的结果。
+
+如果两个分支修改了不同地方：
+
+```text
+Current：
+x = 10
+y = 20
+
+Incoming：
+x = 10
+y = 30
+```
+
+Git 很容易自动合并。
+
+但是如果：
+
+```text
+Current：
+x = 20
+
+Incoming：
+x = 30
+```
+
+Git 就不知道：
+
+```text
+到底应该 20？
+还是 30？
+```
+
+于是产生：
+
+```text
+CONFLICT
+```
+
+------
+
+# 十一、Merge Conflict 冲突
+
+Git 可能在文件中写：
+
+```text
+<<<<<<< HEAD
+x = 20
+=======
+x = 30
+>>>>>>> origin/feature/A
+```
+
+含义：
+
+```text
+<<<<<<< HEAD
+        ↓
+当前分支
+
+=======
+
+        ↓
+Incoming
+准备合并进来的版本
+
+>>>>>>> origin/feature/A
+```
+
+所以：
+
+```text
+Current
+   │
+   ├── x = 20
+   │
+   │
+Incoming
+   │
+   └── x = 30
+```
+
+你需要决定最终代码应该是什么。
+
+------
+
+# 十二、VS Code 冲突解决
+
+VS Code 常见几个按钮：
+
+### Accept Current Change
+
+保留当前分支：
+
+```text
+Current
+```
+
+### Accept Incoming Change
+
+保留 incoming：
+
+```text
+Incoming
+```
+
+### Accept Both Changes
+
+两个都保留：
+
+```text
+Current
+Incoming
+```
+
+但注意：
+
+> **Accept Both 不代表一定正确。**
+
+例如：
+
+```python
+x = 10
+x = 20
+```
+
+语法可能没问题，但逻辑可能完全错。
+
+所以最终目标不是：
+
+> “把冲突消掉。”
+
+而是：
+
+> **让 Result 中的最终代码逻辑正确。**
+
+------
+
+# 十三、Diff
+
+Diff 的核心就是：
+
+> **比较两个版本有什么不同。**
+
+例如：
+
+```diff
+- x = 10
++ x = 20
+```
+
+表示：
+
+```text
+旧版本：
+x = 10
+
+新版本：
+x = 20
+```
+
+所以：
+
+```text
+Diff → 看差异
+Merge → 合并差异
+Conflict → Git 无法自动决定怎么合
+```
+
+------
+
+# 十四、三路合并（3-Way Merge）
+
+这是我们最后讲到的重点。
+
+普通直觉可能认为：
+
+```text
+Current ↔ Incoming
+```
+
+直接比较两个版本。
+
+但是 Git 的三路合并实际上会看三个版本：
+
+```text
+             Base
+            /    \
+           /      \
+      Current    Incoming
+```
+
+### Base
+
+两个分支分叉之前的**共同祖先**。
+
+### Current
+
+当前所在分支的版本。
+
+### Incoming
+
+准备合并进来的分支版本。
+
+例如：
+
+```text
+Base：
+
+x = 10
+```
+
+然后两边分别修改：
+
+```text
+Current：
+
+x = 20
+
+
+Incoming：
+
+x = 30
+```
+
+Git 就能知道：
+
+```text
+Base       x = 10
+              ↙
+Current    x = 20
+
+Base       x = 10
+              ↘
+Incoming   x = 30
+```
+
+两边都改了同一个地方，而且改成不同内容。
+
+于是：
+
+```text
+Git：
+“我不知道你们谁对。”
+        ↓
+Conflict
+        ↓
+交给人判断
+```
+
+------
+
+# 十五、三路合并编辑器
+
+因此 VS Code 的 Merge Editor 可以理解为：
+
+```text
+        Base
+         │
+   ┌─────┴─────┐
+   ↓           ↓
+Current     Incoming
+   \           /
+    \         /
+     ↓       ↓
+      Result
+```
+
+其中：
+
+```text
+Current
+↓
+当前分支
+
+Incoming
+↓
+传入分支
+
+Base
+↓
+共同祖先
+
+Result
+↓
+最终要留下的代码
+```
+
+所以我们前面讲的：
+
+```text
+Accept Current
+Accept Incoming
+Accept Both
+Compare Changes
+```
+
+其实都是围绕着：
+
+> **“最终 Result 应该是什么？”**
+
+来操作的。
+
+------
+
+# 十六、整个 Git 协作流程
+
+把今天所有知识连起来：
+
+```text
+                 原作者仓库
+               upstream / main
+                     ↑
+                     │ PR
+                     │
+                 你的 Fork
+               origin / feature/A
+                     ↑
+                     │ push
+                     │
+                本地 feature/A
+                     │
+                  开发代码
+                     │
+                   commit
+                     │
+                     ↓
+                  git push
+                     │
+                     ↓
+                GitHub Fork
+                     │
+                  创建 PR
+                     │
+                     ↓
+              原作者 Review
+                     │
+                     ↓
+                   Merge
+                     │
+                     ↓
+               原作者 main
+```
+
+如果 Merge 的时候发生冲突：
+
+```text
+Merge
+  ↓
+Conflict
+  ↓
+3-Way Merge
+  ↓
+Base + Current + Incoming
+  ↓
+Diff
+  ↓
+人工判断
+  ↓
+Result
+  ↓
+add
+  ↓
+commit
+```
+
+------
+
+## 最后给你一张“速记表”
+
+| 概念       | 核心意思                               |
+| ---------- | -------------------------------------- |
+| `origin`   | 自己 Fork 的远程仓库                   |
+| `upstream` | 原作者/官方远程仓库                    |
+| `branch`   | 一条独立开发线路                       |
+| `commit`   | 把修改保存到本地 Git 历史              |
+| `push`     | 本地 → 远程                            |
+| `fetch`    | 获取远程最新信息，不合并               |
+| `pull`     | fetch + merge/rebase                   |
+| `Fork`     | 在 GitHub 上复制一份到自己名下         |
+| `PR`       | 请求把自己的远程分支合并到对方目标分支 |
+| `Merge`    | 真正把两个分支合并                     |
+| `Diff`     | 比较两个版本的差异                     |
+| `Conflict` | Git 无法自动决定如何合并               |
+| `Base`     | 两个分支共同祖先                       |
+| `Current`  | 当前分支                               |
+| `Incoming` | 要合进来的分支                         |
+| `Result`   | 最终合并结果                           |
+
+### ⭐ 最值得背下来的 5 句话
+
+> **1. Pull：远程 → 本地。**
+> **2. Push：本地 → 远程。**
+> **3. Fork：把别人的仓库复制到自己名下。**
+> **4. PR：请求把我的远程分支合并进你的目标分支。**
+> **5. Diff 看差异，Merge 做合并，三路合并用 Base + Current + Incoming 判断冲突。**
